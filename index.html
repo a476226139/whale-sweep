@@ -246,8 +246,7 @@ function onTap(x,y,flag){
   const c=at(x,y);
   if(!c||over)return;
   ensureAudio();
-  if(!actx)return;
-  if(actx.state==='suspended')actx.resume();
+  if(actx&&actx.state==='suspended')actx.resume();
   if(mode==='flag'&&!flag)flag=true;
   if(!started&&!flag){started=true;placeMines(x,y);}
   if(flag){
