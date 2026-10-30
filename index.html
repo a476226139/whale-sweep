@@ -36,6 +36,10 @@ h1{font-size:18px;font-weight:600;letter-spacing:.28em;margin:0 0 4px;color:#9fe
 .overlay.show{display:flex}
 .overlay p{margin:0;font-size:15px;color:#d8f4ff}
 .overlay button{background:#7fe3ff;color:#02131f;border:0;border-radius:999px;padding:8px 22px;font-size:14px;font-weight:600;cursor:pointer}
+.gate{position:absolute;inset:0;z-index:9;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;background:rgba(2,12,22,.9);border-radius:14px;cursor:pointer}
+.gate.hide{display:none}
+.gate p{margin:0;font-size:16px;color:#bfeaff;letter-spacing:.1em}
+.gate small{color:#5e93b3;font-size:12px}
 </style>
 </head>
 <body>
@@ -52,6 +56,7 @@ h1{font-size:18px;font-weight:600;letter-spacing:.28em;margin:0 0 4px;color:#9fe
   <div class="hint">手机：长按插泡泡 · 桌面：右键插泡泡 · 点已翻开的格子可再掀一圈</div>
   <div id="msg"></div>
   <div class="overlay" id="over"><p id="overText"></p><button id="again">再来一局</button></div>
+  <div class="gate" id="gate"><p>轻点一下，下水</p><small>声音和背景音乐会从这一刻开始</small></div>
 </div>
 <script>
 const N=9,MINES=10;
@@ -63,6 +68,7 @@ const msgEl=document.getElementById('msg');
 const overlay=document.getElementById('over');
 const overText=document.getElementById('overText');
 const musicBtn=document.getElementById('musicBtn');
+const gate=document.getElementById('gate');
 
 /* ---------- 声音：全部现场合成，不加载任何音频文件 ---------- */
 let actx=null,master=null,bgmBus=null,bgmTimer=null,bgmStep=0,bgmNext=0,musicOn=true;
@@ -240,7 +246,8 @@ function onTap(x,y,flag){
   const c=at(x,y);
   if(!c||over)return;
   ensureAudio();
-  if(actx&&actx.state==='suspended')actx.resume();
+  if(!actx)return;
+  if(actx.state==='suspended')actx.resume();
   if(mode==='flag'&&!flag)flag=true;
   if(!started&&!flag){started=true;placeMines(x,y);}
   if(flag){
@@ -272,18 +279,29 @@ function lose(){
   msgEl.textContent='踩到渔网了，翻肚皮。';
 }
 
+/* 那一下真人点击：解锁声音，再把门帘收起来 */
+function enterWater(){
+  ensureAudio();
+  if(actx&&actx.state==='suspended')actx.resume();
+  gate.classList.add('hide');
+}
+
 document.getElementById('modeBtn').addEventListener('click',e=>{
   mode=mode==='dig'?'flag':'dig';
   e.currentTarget.textContent=mode==='dig'?'挖':'标';
   e.currentTarget.classList.toggle('on',mode==='flag');
 });
 
-musicBtn.addEventListener('click',()=>{
+musicBtn.addEventListener('click',e=>{
+  e.stopPropagation();
   ensureAudio();
   musicOn=!musicOn;
   musicBtn.classList.toggle('off',!musicOn);
   if(bgmBus)bgmBus.gain.setTargetAtTime(musicOn?0.5:0,actx.currentTime,0.12);
 });
+
+gate.addEventListener('pointerdown',enterWater);
+gate.addEventListener('click',enterWater);
 
 document.getElementById('again').addEventListener('click',reset);
 reset();
